@@ -41,8 +41,15 @@
       { id: "panorama", href: "pages/panorama.html", label: "Panorama", icon: "🛰️", desc: "Vue d'ensemble gestion centralisée 11.1" },
       { id: "pano-cfg", href: "pages/panorama-configurateur.html", label: "Configurateur Panorama", icon: "🎛️", desc: "Templates, device groups, logs, push" },
     ] },
+    { label: "Office", prod: "office", sub: "Formation", items: [
+      { id: "office", href: "pages/office.html", label: "Office Academy", icon: "🎓", desc: "Word, Excel, PowerPoint : débutant → expert" },
+      { id: "office-w", href: "pages/office.html#/word", label: "Formation Word", icon: "📝", desc: "Documents, styles, publipostage, modèles" },
+      { id: "office-x", href: "pages/office.html#/excel", label: "Formation Excel", icon: "📊", desc: "Formules, recherches, TCD, tableaux de bord" },
+      { id: "office-p", href: "pages/office.html#/powerpoint", label: "Formation PowerPoint", icon: "🎬", desc: "Design, animations, présentation" },
+      { id: "office-exp", href: "pages/office.html#/export", label: "Espace formateur & export", icon: "📦", desc: "Kit .zip, supports, attestations" },
+    ] },
   ];
-  const PROD_LABEL = { panos: "PAN-OS 11.0", panorama: "Panorama 11.1" };
+  const PROD_LABEL = { panos: "PAN-OS 11.0", panorama: "Panorama 11.1", office: "Office Academy" };
 
   /* ---------- nav + footer ---------- */
   const nav = document.getElementById("site-nav");
@@ -65,7 +72,7 @@
         <span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></span>
         <span>PANW Config Builder<small>${product ? PROD_LABEL[product] : "PAN-OS 11.0 · Panorama 11.1"}</small></span>
       </a>
-      ${product ? `<span class="nav-prod" title="Produit courant"><i></i>${product === "panorama" ? "Panorama" : "PAN-OS"}</span>` : ""}
+      ${product ? `<span class="nav-prod" title="Produit courant"><i></i>${product === "panorama" ? "Panorama" : product === "office" ? "Office" : "PAN-OS"}</span>` : ""}
       <button class="nav-burger" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
       <ul class="nav-links">
         ${NAV.map((g, i) => g.items ? dd(g, i) : `<li>${link(g)}</li>`).join("")}
@@ -91,7 +98,7 @@
       <div><b style="color:var(--tx2)">PANW Config Builder</b> — outil d'aide à la configuration Palo Alto Networks, non officiel (PAN-OS 11.0 · Panorama 11.1).<br>
       Palo Alto Networks, PAN-OS et Panorama sont des marques de leurs propriétaires respectifs. Relisez toujours la configuration générée avant de l'appliquer en production.<br>
       <a href="${ZIP_URL}" title="Dézippe puis ouvre index.html, fonctionne hors ligne">⬇ Télécharger le site (local)</a> · <a href="${SITE_URL}" rel="noopener">${SITE_URL.replace("https://", "")}</a></div>
-      <div class="foot-links"><a href="${root}pages/configurateur.html">Configurateur PAN-OS</a><a href="${root}pages/panorama-configurateur.html">Configurateur Panorama</a>
+      <div class="foot-links"><a href="${root}pages/configurateur.html">Configurateur PAN-OS</a><a href="${root}pages/panorama-configurateur.html">Configurateur Panorama</a><a href="${root}pages/office.html">Office Academy</a>
       <span>Conçu par <b style="color:var(--or2)">Dinèche RADJOU</b></span></div>
     </div></footer>`;
   }

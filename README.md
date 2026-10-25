@@ -8,6 +8,17 @@ Outil web pour configurer un environnement Palo Alto Networks chez n'importe que
 🌐 **En ligne : https://dinecherd.github.io/panw/**
 ⬇ **Version locale (hors ligne) : [télécharger le site (.zip)](https://github.com/dinecherd/panw/archive/refs/heads/main.zip)** — dézippe puis ouvre `index.html`, aucun serveur ni installation (HTML/CSS/JS pur).
 
+## 🎓 Office Academy — formation Word · Excel · PowerPoint
+
+Page : `pages/office.html` (🌐 https://dinecherd.github.io/panw/pages/office.html)
+
+- **24 modules** (8 par application), du niveau **Débutant** à **Expert**, avec leçons, raccourcis, labs et quiz.
+- **Labs interactifs vérifiés en direct** dans des simulateurs fidèles : tableur Excel (moteur de formules FR, recopie, F4, MFC, tri/filtre, graphiques, TCD), traitement de texte Word (styles, table des matières, tableaux, en-têtes, commentaires…), éditeur PowerPoint (thèmes, formes, animations, transitions, diaporama plein écran).
+- **Défis raccourcis** chronométrés, **labs « vraie appli »** avec fichiers de départ, **quiz** expliqués, XP & rangs.
+- **Mode formateur** : présentation plein écran du cours (minuteur, laser, écran noir), réponses mises en évidence.
+- **Export local** : supports HTML stagiaire/formateur, fichiers d'exercice (.csv, .doc, plan .rtf), **kit formateur .zip** généré dans le navigateur, attestation imprimable, progression exportable.
+- Contenu : `assets/js/office/{word,excel,powerpoint}.js` · contrat : `assets/js/office/SPEC.md` · moteur : `assets/js/office/engine.js`.
+
 ## Deux produits
 
 | | 🛡️ **PAN-OS 11.0** (pare-feu NGFW) | 🛰️ **Panorama 11.1** (gestion centralisée) |
