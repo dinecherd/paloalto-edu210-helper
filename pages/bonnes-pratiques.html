@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bonnes pratiques · PANW Config Builder</title>
+<meta name="description" content="Bonnes pratiques PAN-OS 11.0 : créer une règle de sécurité pas à pas (GUI et CLI), NAT, profils, nommage, durcissement du management, logs et checklist.">
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="../assets/css/hub.css">
+<style>
+  .bp-hero{padding:70px 0 30px}
+  .bp-hero h1{margin:14px 0 16px}
+  .bp-tabs{position:sticky;top:64px;z-index:15;display:flex;gap:6px;overflow-x:auto;padding:10px 0;margin-bottom:26px;background:linear-gradient(var(--bg) 70%,transparent);scrollbar-width:thin}
+  .bp-tabs button{flex:none;font:700 14px var(--font);color:var(--mut);padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;transition:.2s var(--ease)}
+  .bp-tabs button:hover{color:#fff;border-color:var(--line2)}
+  .bp-tabs button[aria-selected="true"]{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--or),var(--or2));box-shadow:0 10px 30px -14px var(--or-glow)}
+  .bp-pane{animation:fadeIn .35s var(--ease)}
+  .bp-pane h2{margin:0 0 6px}
+  .bp-pane h3{margin:26px 0 10px;font-size:18px}
+  .bp-pane .lead{margin-bottom:18px}
+  .rule-list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+  .rule-list li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:15px}
+  .rule-list li>i{font-style:normal;flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:14px}
+  .rule-list .do>i{background:rgba(34,197,94,.18);color:#86EFAC}
+  .rule-list .dont>i{background:rgba(239,68,68,.18);color:#FCA5A5}
+  .rule-list b{color:#fff}
+  .tbl{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 4px}
+  .tbl th,.tbl td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tbl th{color:var(--mut);font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  .tbl td code{font-size:13px;color:var(--acc-tx)}
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+  .step{display:grid;grid-template-columns:40px 1fr;gap:14px;margin:18px 0}
+  .step>.n{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,var(--or),var(--or2));color:#fff}
+  .step h4{margin:6px 0 6px;font-size:16px}
+  .step p{margin:0 0 8px;color:var(--tx2)}
+  .path{display:inline-block;font:600 13px var(--mono);color:var(--acc-tx);background:rgba(var(--acc-rgb),.1);border:1px solid rgba(var(--acc-rgb),.35);padding:3px 9px;border-radius:8px}
+  .code-box{position:relative;margin:10px 0}
+  .rb{width:100%;border-collapse:collapse;font:600 13px var(--mono)}
+  .rb th,.rb td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  .rb th{color:var(--mut);font-family:var(--font);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+  .rb .allow{color:#86EFAC}.rb .deny{color:#FCA5A5}
+  .chk{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .chk label{display:flex;gap:12px;align-items:flex-start;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:15px}
+  .chk input{margin-top:3px;accent-color:var(--or);width:17px;height:17px;flex:none}
+  .chk input:checked+span{color:var(--mut);text-decoration:line-through}
+  .chk-bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;margin:6px 0 18px}
+  .chk-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--or),var(--or2));transition:width .3s var(--ease)}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (max-width:640px){.bp-tabs{top:56px}.step{grid-template-columns:1fr}.step>.n{width:34px;height:34px}}
+</style>
+</head>
+<body data-root="../" data-page="bp" data-product="panos">
+<div id="site-nav"></div>
+
+<header class="bp-hero">
+  <div class="wrap">
+    <span class="kicker fade-up">Bonnes pratiques PAN-OS 11.0</span>
+    <h1 class="fade-up" style="animation-delay:80ms">Configurer proprement,<br><span class="grad">du premier coup.</span></h1>
+    <p class="lead fade-up" style="animation-delay:160ms">Les règles d'or pour une rulebase lisible et sûre : comment créer une règle de sécurité pas à pas (GUI et CLI), publier un serveur en NAT, appliquer les profils, nommer les objets, durcir le management et garder des logs exploitables.</p>
+  </div>
+</header>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="bp-tabs" role="tablist" aria-label="Thèmes des bonnes pratiques" id="bp-tabs">
+      <button role="tab" data-tab="regles">🧱 Règles de sécurité</button>
+      <button role="tab" data-tab="exemple">🛠️ Créer une règle (pas à pas)</button>
+      <button role="tab" data-tab="nat">🔀 NAT</button>
+      <button role="tab" data-tab="profils">🧬 Profils de sécurité</button>
+      <button role="tab" data-tab="objets">🏷️ Objets & nommage</button>
+      <button role="tab" data-tab="mgmt">🔐 Management</button>
+      <button role="tab" data-tab="logs">📜 Logs & maintenance</button>
+      <button role="tab" data-tab="checklist">✅ Checklist</button>
+    </div>
+
+    <!-- ===================== RÈGLES ===================== -->
+    <div class="bp-pane" role="tabpanel" id="tab-regles">
+      <h2>Les règles d'or d'une rulebase</h2>
+      <p class="lead">PAN-OS évalue les règles de haut en bas et applique la <b>première</b> qui correspond. L'ordre, la précision et les profils font toute la différence.</p>
+
+      <ul class="rule-list">
+        <li class="do"><i>✓</i><span><b>Utiliser App-ID, pas les ports.</b> Remplir <code>Application</code> (ex. <code>ssl</code>, <code>web-browsing</code>, <code>dns</code>) au lieu de <code>any</code> + service TCP/443.</span></li>
+        <li class="do"><i>✓</i><span><b>Service = <code>application-default</code></b> : l'application n'est autorisée que sur ses ports standards. Évite le contournement par port non standard.</span></li>
+        <li class="do"><i>✓</i><span><b>Du plus précis au plus général.</b> Les règles spécifiques (un serveur, un groupe d'utilisateurs) en haut, les règles larges en bas.</span></li>
+        <li class="do"><i>✓</i><span><b>Un profil de sécurité sur chaque règle <code>allow</code></b> (via un <i>Security Profile Group</i>) : AV, Anti-Spyware, Vulnérabilités, URL, File Blocking, WildFire.</span></li>
+        <li class="do"><i>✓</i><span><b>Log at Session End</b> activé + un <b>Log Forwarding Profile</b> vers le syslog/SIEM ou Panorama.</span></li>
+        <li class="do"><i>✓</i><span><b>Nom, description et tag sur chaque règle</b> : qui l'a demandée, pourquoi, n° de ticket, date.</span></li>
+        <li class="do"><i>✓</i><span><b>Activer le log sur <code>interzone-default</code></b> (Policies › Security › Override) pour voir ce qui est bloqué.</span></li>
+        <li class="do"><i>✓</i><span><b>Filtrer par utilisateur/groupe (User-ID)</b> quand c'est possible plutôt que par plage IP.</span></li>
+        <li class="dont"><i>✕</i><span><b>Jamais de règle <code>any → any / any / allow</code>.</b> Même « temporaire » : elle reste toujours.</span></li>
+        <li class="dont"><i>✕</i><span><b>Pas de <code>service any</code> avec une application précise</b> : l'application passerait sur n'importe quel port.</span></li>
+        <li class="dont"><i>✕</i><span><b>Pas de règles en double ou masquées</b> (<i>shadowed</i>) : PAN-OS les signale au commit, corrige-les.</span></li>
+        <li class="dont"><i>✕</i><span><b>Ne pas autoriser le management (ssh, https du pare-feu) depuis Untrust.</b></span></li>
+      </ul>
+
+      <h3>Ordre recommandé de la rulebase</h3>
+      <div class="tbl-wrap">
+        <table class="rb">
+          <thead><tr><th>#</th><th>Nom</th><th>Source</th><th>Destination</th><th>Application</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Block-Bad-IP-In/Out</td><td>EDL malveillantes</td><td>any</td><td>any</td><td class="deny">deny</td></tr>
+            <tr><td>2</td><td>Block-QUIC</td><td>LAN</td><td>WAN</td><td>quic</td><td class="deny">deny</td></tr>
+            <tr><td>3</td><td>LAN-to-DNS-Internes</td><td>LAN</td><td>SRV-DNS</td><td>dns</td><td class="allow">allow</td></tr>
+            <tr><td>4</td><td>WAN-to-DMZ-Web</td><td>any (WAN)</td><td>SRV-WEB (pré-NAT)</td><td>web-browsing, ssl</td><td class="allow">allow</td></tr>
+            <tr><td>5</td><td>LAN-Admins-to-DMZ</td><td>grp IT-Admins</td><td>DMZ</td><td>ssh, ms-rdp</td><td class="allow">allow</td></tr>
+            <tr><td>6</td><td>LAN-to-Internet-Web</td><td>LAN</td><td>WAN</td><td>web-browsing, ssl</td><td class="allow">allow</td></tr>
+            <tr><td>7</td><td>Deny-All-Log</td><td>any</td><td>any</td><td>any</td><td class="deny">deny</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout or"><b>Pourquoi bloquer QUIC ?</b>QUIC (UDP/443) chiffre tout et échappe au décryptage SSL et au filtrage URL. En le bloquant, les navigateurs reviennent automatiquement en TLS/TCP, inspectable.</div>
+      <p class="small mut">Teste tes règles avant de les appliquer avec <a href="simulateur-securite.html">l'Assistant Règle</a> (score bonnes pratiques + test de flux).</p>
+    </div>
+
+    <!-- ===================== EXEMPLE ===================== -->
+    <div class="bp-pane" role="tabpanel" id="tab-exemple" hidden>
+      <h2>Exemple : créer une règle de sécurité pas à pas</h2>
+      <p class="lead">Besoin : <b>autoriser les postes du LAN (192.168.1.0/24) à naviguer sur Internet</b> en HTTP/HTTPS, avec inspection complète et logs.</p>
+
+      <div class="step"><div class="n">1</div><div>
+        <h4>Créer l'objet adresse</h4>
+        <p><span class="path">Objects › Addresses › Add</span></p>
+        <p>Name : <code>NET-LAN-Users</code> · Type : IP Netmask · <code>192.168.1.0/24</code> · Tag : <code>LAN</code></p>
+      </div></div>
+
+      <div class="step"><div class="n">2</div><div>
+        <h4>Préparer le groupe de profils</h4>
+        <p><span class="path">Objects › Security Profile Groups › Add</span></p>
+        <p>Name : <code>PG-Default</code> · Antivirus <code>default</code> · Anti-Spyware <code>strict</code> · Vulnerability <code>strict</code> · URL <code>default</code> · File Blocking <code>basic file blocking</code> · WildFire <code>default</code>.</p>
+        <div class="callout"><b>Astuce</b>Nomme le groupe <code>default</code> : il sera appliqué automatiquement à toutes les nouvelles règles.</div>
+      </div></div>
+
+      <div class="step"><div class="n">3</div><div>
+        <h4>Créer la règle — onglet General</h4>
+        <p><span class="path">Policies › Security › Add</span></p>
+        <p>Name : <code>LAN-to-Internet-Web</code> · Rule Type : <code>universal</code> · Description : « Navigation web des postes LAN – ticket #1234 » · Tag : <code>LAN</code></p>
+      </div></div>
+
+      <div class="step"><div class="n">4</div><div>
+        <h4>Onglets Source / Destination</h4>
+        <p><b>Source</b> : Zone <code>LAN</code> · Address <code>NET-LAN-Users</code> · User <code>any</code> (ou un groupe AD si User-ID est actif)</p>
+        <p><b>Destination</b> : Zone <code>WAN</code> · Address <code>any</code></p>
+      </div></div>
+
+      <div class="step"><div class="n">5</div><div>
+        <h4>Onglets Application / Service-URL Category</h4>
+        <p><b>Application</b> : <code>web-browsing</code>, <code>ssl</code> (pas <code>any</code>)</p>
+        <p><b>Service</b> : <code>application-default</code> · URL Category : <code>any</code> (le filtrage se fait via le profil URL)</p>
+      </div></div>
+
+      <div class="step"><div class="n">6</div><div>
+        <h4>Onglet Actions</h4>
+        <p>Action : <code>Allow</code> · Profile Type : <code>Group</code> → <code>PG-Default</code> · ☐ Log at Session Start · ☑ Log at Session End · Log Forwarding : <code>LF-Default</code></p>
+      </div></div>
+
+      <div class="step"><div class="n">7</div><div>
+        <h4>Placer la règle, valider et commiter</h4>
+        <p>Glisse la règle <b>au-dessus</b> de <code>Deny-All-Log</code>, puis <span class="path">Commit › Preview Changes › Validate › Commit</span>.</p>
+      </div></div>
+
+      <h3>La même chose en CLI</h3>
+      <div class="code-box">
+        <button class="btn sm copy-btn" data-copy-target="#cli-rule">Copier</button>
+<pre class="code" id="cli-rule"><span class="c"># mode configuration</span>
+configure
+
+<span class="c"># 1. objet adresse + tag</span>
+set tag LAN color color3
+set address NET-LAN-Users ip-netmask 192.168.1.0/24
+set address NET-LAN-Users tag LAN
+
+<span class="c"># 2. groupe de profils</span>
+set profile-group PG-Default virus default spyware strict vulnerability strict url-filtering default file-blocking "basic file blocking" wildfire-analysis default
+
+<span class="c"># 3-6. règle de sécurité</span>
+set rulebase security rules LAN-to-Internet-Web from LAN to WAN source NET-LAN-Users destination any source-user any application [ web-browsing ssl ] service application-default category any action allow
+set rulebase security rules LAN-to-Internet-Web profile-setting group PG-Default
+set rulebase security rules LAN-to-Internet-Web log-start no log-end yes log-setting LF-Default
+set rulebase security rules LAN-to-Internet-Web tag LAN description "Navigation web des postes LAN - ticket #1234"
+
+<span class="c"># 7. position + commit</span>
+move rulebase security rules LAN-to-Internet-Web before Deny-All-Log
+commit</pre>
+      </div>
+
+      <h3>Règle de blocage finale avec log</h3>
+      <div class="code-box">
+        <button class="btn sm copy-btn" data-copy-target="#cli-deny">Copier</button>
+<pre class="code" id="cli-deny">set rulebase security rules Deny-All-Log from any to any source any destination any application any service any action deny log-end yes
+<span class="c"># ou : activer le log sur la règle par défaut interzone</span>
+set rulebase default-security-rules rules interzone-default action deny log-end yes</pre>
+      </div>
+
+      <h3>Vérifier</h3>
+      <div class="code-box">
+        <button class="btn sm copy-btn" data-copy-target="#cli-verif">Copier</button>
+<pre class="code" id="cli-verif"><span class="c"># quelle règle s'applique à ce flux ?</span>
+test security-policy-match from LAN to WAN source 192.168.1.50 destination 8.8.8.8 protocol 6 destination-port 443 application ssl
+
+<span class="c"># sessions en cours depuis un poste</span>
+show session all filter source 192.168.1.50
+
+<span class="c"># compteurs d'utilisation des règles</span>
+show rule-hit-count vsys vsys-name vsys1 rule-base security rules all</pre>
+      </div>
+      <div class="feat" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+        <a class="btn primary sm" href="configurateur.html">⚙️ Générer ta propre règle dans le configurateur</a>
+        <a class="btn sm" href="simulateur-securite.html">🧱 Tester avec l'Assistant Règle</a>
+      </div>
+    </div>
+
+    <!-- ===================== NAT ===================== -->
+    <div class="bp-pane" role="tabpanel" id="tab-nat" hidden>
+      <h2>NAT : les pièges à éviter</h2>
+      <p class="lead">La règle d'or : <b>NAT = adresses pré-NAT, zone selon la route</b>. La règle de sécurité utilise les <b>IP pré-NAT</b> et la <b>zone post-NAT</b>.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Cas</th><th>Règle NAT</th><th>Règle de sécurité</th></tr></thead>
+        <tbody>
+          <tr><td><b>Source NAT</b> (LAN → Internet)</td><td>From <code>LAN</code> To <code>WAN</code> · Dynamic IP and Port · interface <code>ethernet1/1</code></td><td>From <code>LAN</code> To <code>WAN</code> · source <code>192.168.1.0/24</code></td></tr>
+          <tr><td><b>Destination NAT</b> (publication serveur)</td><td>From <code>WAN</code> To <code>WAN</code> · dst <code>203.0.113.20</code> → <code>10.10.20.10</code></td><td>From <code>WAN</code> To <code>DMZ</code> · dst <code>203.0.113.20</code> (IP publique !)</td></tr>
+        </tbody>
+      </table></div>
+      <ul class="rule-list" style="margin-top:16px">
+        <li class="do"><i>✓</i><span><b>Préférer DIPP sur l'interface</b> pour la sortie Internet ; un <b>pool d'IP</b> au-delà de ~64 000 sessions simultanées par IP.</span></li>
+        <li class="do"><i>✓</i><span><b>Bi-directionnel uniquement pour du 1:1 statique</b> ; sinon deux règles distinctes.</span></li>
+        <li class="do"><i>✓</i><span><b>Prévoir l'U-turn</b> si les utilisateurs internes accèdent au serveur via son IP publique.</span></li>
+        <li class="dont"><i>✕</i><span><b>Ne pas mettre la zone DMZ en destination de la règle DNAT</b> : la zone de destination NAT est celle de l'IP publique (WAN).</span></li>
+      </ul>
+      <div class="code-box">
+        <button class="btn sm copy-btn" data-copy-target="#cli-nat">Copier</button>
+<pre class="code" id="cli-nat"><span class="c"># Source NAT sortie Internet</span>
+set rulebase nat rules SNAT-LAN-Internet from LAN to WAN source NET-LAN-Users destination any service any source-translation dynamic-ip-and-port interface-address interface ethernet1/1
+
+<span class="c"># Destination NAT : publication du serveur web</span>
+set address SRV-WEB-01 ip-netmask 10.10.20.10/32
+set address PUB-WEB-01 ip-netmask 203.0.113.20/32
+set rulebase nat rules DNAT-WEB-01 from WAN to WAN source any destination PUB-WEB-01 service service-https destination-translation translated-address SRV-WEB-01
+
+<span class="c"># règle de sécurité associée (IP pré-NAT, zone post-NAT)</span>
+set rulebase security rules WAN-to-DMZ-Web from WAN to DMZ source any destination PUB-WEB-01 application [ ssl web-browsing ] service application-default action allow profile-setting group PG-Default log-end yes</pre>
+      </div>
+      <p class="small mut">Visualise le flux avant/après traduction avec <a href="simulateur-nat.html">l'Assistant NAT animé</a>.</p>
+    </div>
+
+    <!-- ===================== PROFILS ===================== -->
+    <div class="bp-pane" role="tabpanel" id="tab-profils" hidden>
+      <h2>Profils de sécurité</h2>
+      <p class="lead">Une règle <code>allow</code> sans profil laisse passer les menaces. Applique un groupe de profils à <b>toutes</b> les règles qui autorisent du trafic.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Profil</th><th>Recommandation</th></tr></thead>
+        <tbody>
+          <tr><td><b>Antivirus</b></td><td>Action <code>reset-both</code> sur tous les décodeurs (http, smtp, imap, pop3, ftp, smb). WildFire inline ML activé.</td></tr>
+          <tr><td><b>Anti-Spyware</b></td><td>Basé sur <code>strict</code> · <b>DNS Security</b> + <b>DNS sinkhole</b> (IPv4 <code>sinkhole.paloaltonetworks.com</code>) pour repérer les postes infectés.</td></tr>
+          <tr><td><b>Vulnerability</b></td><td>Basé sur <code>strict</code> : <code>reset-both</code> pour critical/high/medium, défaut pour low/info.</td></tr>
+          <tr><td><b>URL Filtering</b></td><td>Bloquer <code>malware</code>, <code>phishing</code>, <code>command-and-control</code>, <code>grayware</code>, <code>newly-registered-domain</code> ; <code>alert</code> sur le reste pour la visibilité.</td></tr>
+          <tr><td><b>File Blocking</b></td><td>Bloquer les exécutables (<code>exe</code>, <code>dll</code>, <code>bat</code>, <code>ps1</code>…) depuis Internet, sauf exceptions justifiées.</td></tr>
+          <tr><td><b>WildFire</b></td><td>Envoyer <code>any</code> application / <code>any</code> type de fichier ; mises à jour WildFire en <b>temps réel</b>.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn"><b>Décryptage</b>Sans déchiffrement SSL, les profils ne voient que ~10 % du trafic. Mets en place un <b>SSL Forward Proxy</b> en excluant les catégories sensibles (santé, finance, gouvernement) et les applis à certificate pinning.</div>
+    </div>
+
+    <!-- ===================== OBJETS ===================== -->
+    <div class="bp-pane" role="tabpanel" id="tab-objets" hidden>
+      <h2>Objets & convention de nommage</h2>
+      <p class="lead">Une convention claire rend la rulebase lisible par toute l'équipe et facilite la migration vers Panorama.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Type</th><th>Convention</th><th>Exemple</th></tr></thead>
+        <tbody>
+          <tr><td>Hôte</td><td><code>SRV-</code> / <code>PC-</code> + rôle + n°</td><td><code>SRV-WEB-01</code></td></tr>
+          <tr><td>Réseau</td><td><code>NET-</code> + zone/usage</td><td><code>NET-LAN-Users</code></td></tr>
+          <tr><td>IP publique</td><td><code>PUB-</code> + service</td><td><code>PUB-WEB-01</code></td></tr>
+          <tr><td>Groupe d'adresses</td><td><code>GRP-</code> + usage</td><td><code>GRP-DNS-Internes</code></td></tr>
+          <tr><td>Service</td><td><code>SVC-</code> + proto + port</td><td><code>SVC-TCP-8443</code></td></tr>
+          <tr><td>Règle sécurité</td><td><code>Source-to-Dest-Usage</code></td><td><code>LAN-to-Internet-Web</code></td></tr>
+          <tr><td>Règle NAT</td><td><code>SNAT-</code> / <code>DNAT-</code> + cible</td><td><code>DNAT-WEB-01</code></td></tr>
+          <tr><td>Profils</td><td><code>PG-</code> (groupe), <code>AV-</code>, <code>AS-</code>, <code>VP-</code>, <code>URL-</code></td><td><code>PG-Default</code></td></tr>
+        </tbody>
+      </table></div>
+      <ul class="rule-list" style="margin-top:16px">
+        <li class="do"><i>✓</i><span><b>Tags par zone/usage avec couleur</b> pour filtrer la rulebase d'un clic (<i>Group Rules by Tag</i>).</span></li>
+        <li class="do"><i>✓</i><span><b>Groupes d'adresses dynamiques</b> (DAG) basés sur les tags pour les environnements qui bougent (VM, cloud).</span></li>
+        <li class="do"><i>✓</i><span><b>EDL</b> (listes dynamiques externes) pour les IP/URL malveillantes, mises à jour automatiquement.</span></li>
+        <li class="dont"><i>✕</i><span><b>Pas d'IP en dur dans les règles</b> : toujours un objet nommé.</span></li>
+        <li class="dont"><i>✕</i><span><b>Supprimer les objets inutilisés</b> régulièrement (Objects › filtre « Unused »).</span></li>
+      </ul>
+    </div>
+
+    <!-- ===================== MGMT ===================== -->
+    <div class="bp-pane" role="tabpanel" id="tab-mgmt" hidden>
+      <h2>Durcir le management</h2>
+      <p class="lead">L'interface de management est la cible n°1 : elle ne doit jamais être exposée sur Internet.</p>
+      <ul class="rule-list">
+        <li class="do"><i>✓</i><span><b>Management sur un réseau dédié</b> (VLAN d'admin / bastion), avec <b>Permitted IP</b> restreintes.</span></li>
+        <li class="do"><i>✓</i><span><b>Désactiver HTTP et Telnet</b>, ne garder que HTTPS et SSH.</span></li>
+        <li class="do"><i>✓</i><span><b>Comptes nominatifs</b> via LDAP/RADIUS/TACACS+ + MFA ; compte <code>admin</code> local renommé ou mot de passe fort coffré.</span></li>
+        <li class="do"><i>✓</i><span><b>Admin roles</b> au moindre privilège (lecture seule pour le support N1).</span></li>
+        <li class="do"><i>✓</i><span><b>Complexité de mot de passe</b> et verrouillage après échecs ; bannière de connexion légale.</span></li>
+        <li class="do"><i>✓</i><span><b>Interface Management Profile</b> sur les interfaces de données : uniquement <code>ping</code> si nécessaire, jamais sur la zone Untrust.</span></li>
+        <li class="do"><i>✓</i><span><b>Rester sur une version PAN-OS « preferred »</b> et suivre les avis de sécurité (security.paloaltonetworks.com).</span></li>
+      </ul>
+      <div class="code-box">
+        <button class="btn sm copy-btn" data-copy-target="#cli-mgmt">Copier</button>
+<pre class="code" id="cli-mgmt">set deviceconfig system permitted-ip 10.0.99.0/24
+set deviceconfig system service disable-http yes disable-telnet yes
+set mgt-config password-complexity enabled yes minimum-length 12 minimum-uppercase-letters 1 minimum-numeric-letters 1 minimum-special-characters 1
+set deviceconfig system login-banner "Acces reserve au personnel autorise. Toute connexion est journalisee."
+set network profiles interface-management-profile MGMT-Ping-Only ping yes</pre>
+      </div>
+    </div>
+
+    <!-- ===================== LOGS ===================== -->
+    <div class="bp-pane" role="tabpanel" id="tab-logs" hidden>
+      <h2>Logs, mises à jour & sauvegardes</h2>
+      <h3>Logs</h3>
+      <ul class="rule-list">
+        <li class="do"><i>✓</i><span><b>Log at Session End</b> sur toutes les règles ; <i>Session Start</i> uniquement pour du dépannage ponctuel (charge CPU).</span></li>
+        <li class="do"><i>✓</i><span><b>Log Forwarding Profile</b> vers Panorama / syslog / SIEM pour traffic, threat, URL, WildFire.</span></li>
+        <li class="do"><i>✓</i><span><b>NTP configuré</b> : sans horodatage fiable, les logs sont inexploitables.</span></li>
+        <li class="do"><i>✓</i><span><b>Alertes e-mail/SNMP</b> sur les événements critiques (HA, menaces critical, échec de commit).</span></li>
+      </ul>
+      <h3>Mises à jour dynamiques</h3>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Contenu</th><th>Fréquence recommandée</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Applications & Menaces</td><td>Toutes les 30 min (seuil 6 h en prod critique)</td><td>download-and-install</td></tr>
+          <tr><td>Antivirus</td><td>Toutes les heures</td><td>download-and-install</td></tr>
+          <tr><td>WildFire</td><td>Temps réel</td><td>download-and-install</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code-box">
+        <button class="btn sm copy-btn" data-copy-target="#cli-upd">Copier</button>
+<pre class="code" id="cli-upd">set deviceconfig system update-schedule threats recurring every-30-mins at 5 action download-and-install
+set deviceconfig system update-schedule anti-virus recurring hourly at 10 action download-and-install
+set deviceconfig system update-schedule wildfire recurring real-time</pre>
+      </div>
+      <h3>Sauvegardes & changements</h3>
+      <ul class="rule-list">
+        <li class="do"><i>✓</i><span><b>Exporter la config</b> (<code>running-config.xml</code>) avant chaque changement important et chaque montée de version.</span></li>
+        <li class="do"><i>✓</i><span><b>Preview Changes + Validate</b> avant chaque commit ; une description de commit claire.</span></li>
+        <li class="do"><i>✓</i><span><b>Revue trimestrielle</b> : règles sans hit (<i>Rule Usage</i>), règles désactivées, objets inutilisés.</span></li>
+      </ul>
+    </div>
+
+    <!-- ===================== CHECKLIST ===================== -->
+    <div class="bp-pane" role="tabpanel" id="tab-checklist" hidden>
+      <h2>Checklist avant mise en production</h2>
+      <p class="lead">Coche au fur et à mesure (enregistré dans ton navigateur).</p>
+      <div class="chk-bar"><i id="chk-fill"></i></div>
+      <p class="small mut" id="chk-count"></p>
+      <ul class="chk" id="chk"></ul>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+        <button class="btn sm ghost" type="button" id="chk-reset">Réinitialiser</button>
+        <button class="btn sm ghost" type="button" onclick="window.print()">🖨️ Imprimer</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="site-foot"></div>
+<script src="../assets/js/common.js"></script>
+<script>
+  // onglets (avec lien direct : bonnes-pratiques.html#nat)
+  const tabs = [...document.querySelectorAll("#bp-tabs [data-tab]")];
+  function show(id, push) {
+    if (!tabs.some(t => t.dataset.tab === id)) id = tabs[0].dataset.tab;
+    tabs.forEach(t => {
+      const on = t.dataset.tab === id;
+      t.setAttribute("aria-selected", on);
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById("tab-" + t.dataset.tab).hidden = !on;
+      if (on) t.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    if (push) history.replaceState(null, "", "#" + id);
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => show(t.dataset.tab, true));
+    t.addEventListener("keydown", e => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      const n = tabs[(i + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length];
+      n.focus(); show(n.dataset.tab, true);
+    });
+  });
+  addEventListener("hashchange", () => show(location.hash.slice(1)));
+  show(location.hash.slice(1));
+
+  // checklist (progression locale)
+  const ITEMS = [
+    "Aucune règle any → any / allow",
+    "Toutes les règles allow utilisent App-ID + service application-default",
+    "Un groupe de profils de sécurité sur chaque règle allow",
+    "Log at Session End + Log Forwarding sur toutes les règles",
+    "Règle Deny-All-Log en fin de rulebase (ou interzone-default loggée)",
+    "QUIC bloqué si le décryptage SSL est en place",
+    "Règles NAT : IP pré-NAT et bonnes zones vérifiées",
+    "Objets nommés selon la convention, aucun objet inutilisé",
+    "Management : permitted-ip, HTTP/Telnet désactivés, comptes nominatifs",
+    "Mises à jour dynamiques planifiées (App/Threat, AV, WildFire)",
+    "NTP, DNS et syslog/Panorama configurés",
+    "Config exportée et sauvegardée avant mise en prod",
+    "Flux testés avec test security-policy-match",
+  ];
+  const KEY = "panw-bp-checklist";
+  let st = {};
+  try { st = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { st = {}; }
+  const list = document.getElementById("chk");
+  list.innerHTML = ITEMS.map((t, i) => `<li><label><input type="checkbox" data-i="${i}"${st[i] ? " checked" : ""}><span>${PAN.esc(t)}</span></label></li>`).join("");
+  function upd() {
+    const n = ITEMS.filter((_, i) => st[i]).length;
+    document.getElementById("chk-fill").style.width = (n / ITEMS.length * 100) + "%";
+    document.getElementById("chk-count").textContent = `${n} / ${ITEMS.length} points validés`;
+    try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* stockage indisponible */ }
+  }
+  list.addEventListener("change", e => { st[e.target.dataset.i] = e.target.checked; upd(); if (ITEMS.every((_, i) => st[i]) && PAN.confetti) PAN.confetti(); });
+  document.getElementById("chk-reset").addEventListener("click", () => { st = {}; list.querySelectorAll("input").forEach(c => c.checked = false); upd(); });
+  upd();
+</script>
+</body>
+</html>
