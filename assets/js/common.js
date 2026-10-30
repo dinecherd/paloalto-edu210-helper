@@ -3,7 +3,7 @@
      <body data-root="../" data-page="cfg" data-product="panos|panorama">   (data-root = "" pour index.html)
      <div id="site-nav"></div> ... <div id="site-foot"></div>
      <script src="../assets/js/common.js"></script>
-   data-page : home | pan-os | cfg | panorama | pano-cfg | nat-sim | sec-sim | bp
+   data-page : home | pan-os | cfg | panorama | pano-cfg | lab | nat-sim | sec-sim | bp
    API exposée (window.PAN) :
      PAN.toast(msg)                 notification éphémère
      PAN.copy(text) → Promise       copie presse-papiers (+ toast)
@@ -25,7 +25,7 @@
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fine = matchMedia("(pointer: fine)").matches;
 
-  const PANOS_PAGES = ["pan-os", "cfg", "nat-sim", "sec-sim", "bp"], PANO_PAGES = ["panorama", "pano-cfg"];
+  const PANOS_PAGES = ["pan-os", "cfg", "nat-sim", "sec-sim", "bp"], PANO_PAGES = ["panorama", "pano-cfg", "lab"];
   let product = body.dataset.product || (PANOS_PAGES.includes(page) ? "panos" : PANO_PAGES.includes(page) ? "panorama" : "");
   if (product && !body.dataset.product) body.dataset.product = product;
 
@@ -40,6 +40,7 @@
     { label: "Panorama", prod: "panorama", sub: "11.1", items: [
       { id: "panorama", href: "pages/panorama.html", label: "Panorama", icon: "🛰️", desc: "Vue d'ensemble gestion centralisée 11.1" },
       { id: "pano-cfg", href: "pages/panorama-configurateur.html", label: "Configurateur Panorama", icon: "🎛️", desc: "Templates, device groups, logs, push" },
+      { id: "lab", href: "pages/lab-double-barriere.html", label: "Lab Double barrière", icon: "🧪", desc: "22 exercices : objets, règles, NAT, commit & push" },
     ] },
     { label: "Office", prod: "office", sub: "Formation", items: [
       { id: "office", href: "pages/office.html", label: "Office Academy", icon: "🎓", desc: "Word, Excel, PowerPoint : débutant → expert" },
@@ -99,7 +100,7 @@
       <div><b style="color:var(--tx2)">PANW Config Builder</b> — outil d'aide à la configuration Palo Alto Networks, non officiel (PAN-OS 11.0 · Panorama 11.1).<br>
       Palo Alto Networks, PAN-OS et Panorama sont des marques de leurs propriétaires respectifs. Relisez toujours la configuration générée avant de l'appliquer en production.<br>
       <a href="${ZIP_URL}" title="Dézippe puis ouvre index.html, fonctionne hors ligne">⬇ Télécharger le site (local)</a> · <a href="${SITE_URL}" rel="noopener">${SITE_URL.replace("https://", "")}</a></div>
-      <div class="foot-links"><a href="${root}pages/configurateur.html">Configurateur PAN-OS</a><a href="${root}pages/panorama-configurateur.html">Configurateur Panorama</a><a href="${root}pages/office.html">Office Academy</a><a href="${root}pages/bonnes-pratiques.html">Bonnes pratiques</a>
+      <div class="foot-links"><a href="${root}pages/configurateur.html">Configurateur PAN-OS</a><a href="${root}pages/panorama-configurateur.html">Configurateur Panorama</a><a href="${root}pages/lab-double-barriere.html">Lab Double barrière</a><a href="${root}pages/office.html">Office Academy</a><a href="${root}pages/bonnes-pratiques.html">Bonnes pratiques</a>
       <span>Conçu par <b style="color:var(--or2)">Dinèche RADJOU</b></span></div>
     </div></footer>`;
   }

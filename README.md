@@ -8,6 +8,19 @@ Outil web pour configurer un environnement Palo Alto Networks chez n'importe que
 🌐 **En ligne : https://dinecherd.github.io/panw/**
 ⬇ **Version locale (hors ligne) : [télécharger le site (.zip)](https://github.com/dinecherd/panw/archive/refs/heads/main.zip)** — dézippe puis ouvre `index.html`, aucun serveur ni installation (HTML/CSS/JS pur).
 
+## 🧪 Lab Double barrière — Panorama 11.1 / PAN-OS 11.0
+
+Page : `pages/lab-double-barriere.html` (🌐 https://dinecherd.github.io/panw/pages/lab-double-barriere.html)
+
+- **Architecture** : FW-PERIM (Untrust / DMZ / Transit) + FW-INT (Transit / Users / Servers / Admin), un device group et un template stack par pare-feu, objets communs dans Shared.
+- **Console Panorama simulée** : Objects (adresses, groupes, services, tags, EDL), Policies (Security Pre/Post Rules, NAT, Default Rules), Panorama (Managed Devices, Templates, Jobs), sélecteur de device group, Commit to Panorama / Push to Devices / Commit and Push, Preview & Revert.
+- **Validation réaliste** : erreurs « is not a valid reference » au commit Panorama (objet manquant ou hors de portée) et au push (zone absente du template), warnings de shadowing, objets référencés non supprimables.
+- **22 exercices** en 4 niveaux (objets, pare-feu périmétrique, pare-feu interne, commit/push/dépannage) avec checklist validée en direct, indice, solution GUI + CLI, XP et rangs.
+- **Packet tracer animé** à travers les deux barrières (NAT, zones, première règle, règles par défaut, simulation de compromission de FW-PERIM), basé sur la config **poussée**.
+- **Terminal CLI** (Panorama + pare-feux) : `show`, `test security-policy-match`, `commit`, `commit-all`, mode `configure` qui accepte les `set` des solutions ; 7 défis CLI.
+- **Quiz** de 14 questions expliquées. Progression enregistrée dans le navigateur.
+- Contenu : `pages/js/lab-data.js` · moteur : `pages/js/lab.js` · styles : `pages/css/lab.css`.
+
 ## 🎓 Office Academy — formation Word · Excel · PowerPoint
 
 Page : `pages/office.html` (🌐 https://dinecherd.github.io/panw/pages/office.html)

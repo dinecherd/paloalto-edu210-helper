@@ -1,0 +1,176 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lab Double barrière · Panorama &amp; PAN-OS · PAN Config Builder</title>
+<meta name="description" content="Lab interactif : pare-feu périmétrique + pare-feu interne gérés par Panorama 11.1. Créez objets, règles pre/post, NAT, commit & push, dépannez les erreurs, tracez les flux, CLI et quiz.">
+<link rel="stylesheet" href="../assets/css/style.css"><link rel="stylesheet" href="css/lab.css"></head>
+<body data-root="../" data-page="lab" data-product="panorama"><div id="site-nav"></div>
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="lb-hero"><div class="hero-orbs" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
+  <div data-reveal>
+    <span class="kicker">Lab · Panorama 11.1 · PAN-OS 11.0</span>
+    <h1>Lab <span class="grad grad-anim">double barrière</span></h1>
+    <p class="lead">Un pare-feu <b>périmétrique</b> face à Internet, un pare-feu <b>interne</b> devant le SI, les deux pilotés par <b>Panorama</b>. Crée tes objets, tes règles pre/post et ton NAT, fais ton <b>commit</b>, pousse vers les pare-feux, corrige les erreurs, puis envoie de vrais paquets à travers les deux barrières.</p>
+    <div class="row">
+      <a class="btn primary" href="#lab">▶ Lancer le lab</a>
+      <a class="btn ghost" href="#archi">Comprendre l'architecture</a>
+    </div>
+    <div class="stats lb-stats" data-stagger="90">
+      <div class="stat"><b data-count="22">22</b><span>exercices guidés</span></div>
+      <div class="stat"><b data-count="8">8</b><span>flux à tracer</span></div>
+      <div class="stat"><b data-count="7">7</b><span>défis CLI</span></div>
+      <div class="stat"><b data-count="14">14</b><span>questions de quiz</span></div>
+    </div>
+  </div>
+  <div class="lb-hero-topo glass" data-reveal="zoom" aria-hidden="true"><div id="heroTopo"></div></div>
+</div></section>
+
+<!-- ============ ARCHITECTURE ============ -->
+<section id="archi" style="padding-top:30px"><div class="wrap">
+  <div class="sec-head" data-reveal>
+    <span class="kicker">1 · Architecture</span>
+    <h2>Deux barrières, <span class="grad">une console</span></h2>
+    <p class="lead">Si la première barrière tombe (erreur de règle, vulnérabilité, compromission), la seconde protège encore le cœur du SI. C'est la défense en profondeur.</p>
+  </div>
+  <div class="grid g3" data-stagger="110">
+    <div class="card hover" data-tilt="5"><div class="ico">🌐</div><h3>FW-PERIM · PA-3410</h3><p class="mut">Pare-feu <b>périmétrique</b>. Zones <span class="zt z-un">Untrust</span> <span class="zt z-dmz">DMZ</span> <span class="zt z-tr">Transit</span>. Publie le serveur web (DNAT), fait la sortie Internet (SNAT) et bloque les IP malveillantes (EDL).</p></div>
+    <div class="card hover" data-tilt="5"><div class="ico">🏢</div><h3>FW-INT · PA-1410</h3><p class="mut">Pare-feu <b>interne</b>. Zones <span class="zt z-tr">Transit</span> <span class="zt z-us">Users</span> <span class="zt z-srv">Servers</span> <span class="zt z-adm">Admin</span>. Cloisonne les utilisateurs, les serveurs et l'administration, et refuse tout ce qui vient de la DMZ.</p></div>
+    <div class="card hover" data-tilt="5"><div class="ico">🛰️</div><h3>Panorama · M-200</h3><p class="mut">Un <b>device group</b> par pare-feu (politiques et objets) et un <b>template stack</b> par pare-feu (réseau et zones). Les objets communs vont dans <b>Shared</b>.</p></div>
+  </div>
+
+  <div class="grid g2 lb-archi2">
+    <div class="panel lb-pad" data-reveal="left">
+      <h3>Plan d'adressage du lab</h3>
+      <div class="lb-tablewrap"><table class="lb-t">
+        <thead><tr><th>Zone</th><th>Pare-feu</th><th>Interface</th><th>Réseau</th></tr></thead>
+        <tbody>
+          <tr><td><span class="zt z-un">Untrust</span></td><td>FW-PERIM</td><td>ethernet1/1</td><td class="mono">203.0.113.2/24 · VIP web 203.0.113.20</td></tr>
+          <tr><td><span class="zt z-dmz">DMZ</span></td><td>FW-PERIM</td><td>ethernet1/2</td><td class="mono">172.16.10.0/24 · web 172.16.10.10</td></tr>
+          <tr><td><span class="zt z-tr">Transit</span></td><td>les deux</td><td>ethernet1/3 ↔ ethernet1/1</td><td class="mono">10.255.0.0/30 (.1 PERIM · .2 INT)</td></tr>
+          <tr><td><span class="zt z-us">Users</span></td><td>FW-INT</td><td>ethernet1/2</td><td class="mono">10.10.10.0/24</td></tr>
+          <tr><td><span class="zt z-srv">Servers</span></td><td>FW-INT</td><td>ethernet1/3</td><td class="mono">10.20.20.0/24 · DNS .53 · fichiers .10</td></tr>
+          <tr><td><span class="zt z-adm">Admin</span></td><td>FW-INT</td><td>ethernet1/4</td><td class="mono">10.30.30.0/24</td></tr>
+        </tbody></table></div>
+      <p class="small mut" style="margin-top:10px">Le pare-feu interne ne fait <b>pas</b> de NAT : la traduction vers Internet se fait une seule fois, sur FW-PERIM.</p>
+    </div>
+    <div class="panel lb-pad" data-reveal="right">
+      <h3>Hiérarchie Panorama</h3>
+      <div class="lb-tree-viz">
+        <div class="tv-node tv-root">🛰️ Shared <small>objets communs · tags · profils</small></div>
+        <div class="tv-kids">
+          <div class="tv-node">📁 DG-Perimetre <small>→ FW-PERIM</small></div>
+          <div class="tv-node">📁 DG-Interne <small>→ FW-INT</small></div>
+        </div>
+        <div class="tv-sep">Templates (réseau)</div>
+        <div class="tv-kids">
+          <div class="tv-node tpl">🧩 TS-Perimetre <small>= TPL-Perim-Net + TPL-Common</small></div>
+          <div class="tv-node tpl">🧩 TS-Interne <small>= TPL-Int-Net + TPL-Common</small></div>
+        </div>
+      </div>
+      <p class="small mut" style="margin-top:10px">Device group = <b>Policies + Objects</b>. Template = <b>Network + Device</b> (interfaces, zones, routage). Une règle ne peut utiliser que des zones qui existent dans le template stack du pare-feu cible, sinon le push échoue.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ METHODE ============ -->
+<section id="methode" style="padding-top:20px"><div class="wrap">
+  <div class="sec-head" data-reveal>
+    <span class="kicker">2 · Méthode</span>
+    <h2>Créer ses règles sur Panorama, <span class="grad">dans l'ordre</span></h2>
+  </div>
+  <div class="grid g2">
+    <ol class="lb-steps" data-stagger="80">
+      <li><b>Tags</b><span>Objects › Tags (Shared) : repérer visuellement règles et objets.</span></li>
+      <li><b>Objets adresse</b><span>Objects › Addresses : Shared si commun, sinon dans le device group concerné.</span></li>
+      <li><b>Groupes &amp; services</b><span>Objects › Address Groups / Services : regrouper, éviter les ports « en dur ».</span></li>
+      <li><b>Pre Rules</b><span>Policies › Security › Pre Rules : blocages prioritaires puis autorisations précises.</span></li>
+      <li><b>NAT</b><span>Policies › NAT › Pre Rules : DNAT de publication, SNAT de sortie.</span></li>
+      <li><b>Post Rules</b><span>Policies › Security › Post Rules : <code>Deny-All-Log</code> en dernier.</span></li>
+      <li><b>Commit to Panorama</b><span>Valide et enregistre la config sur Panorama, sans rien envoyer aux pare-feux.</span></li>
+      <li><b>Push to Devices</b><span>Envoie device group + template au pare-feu, qui valide et commit à son tour.</span></li>
+      <li><b>Vérifier</b><span>Monitor › Traffic, <code>test security-policy-match</code>, packet tracer.</span></li>
+    </ol>
+    <div class="panel lb-pad lb-order" data-reveal="zoom">
+      <h3>Ordre d'évaluation sur le pare-feu</h3>
+      <p class="small mut">Lecture de haut en bas, la première règle qui correspond l'emporte.</p>
+      <div class="ord">
+        <span class="ord-pk" aria-hidden="true"></span>
+        <div class="ord-l pano">Shared · Pre Rules</div>
+        <div class="ord-l pano">Device Group · Pre Rules</div>
+        <div class="ord-l lcl">Règles locales du pare-feu</div>
+        <div class="ord-l pano hit">Device Group · Post Rules</div>
+        <div class="ord-l pano">Shared · Post Rules</div>
+        <div class="ord-l def">intrazone-default (allow) · interzone-default (deny)</div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ LAB ============ -->
+<section id="lab" style="padding-top:20px"><div class="wrap wide">
+  <div class="sec-head" data-reveal>
+    <span class="kicker">3 · Simulation</span>
+    <h2>La console <span class="grad">Panorama</span> du lab</h2>
+    <p class="lead">Choisis une mission à gauche. La checklist se valide en direct pendant que tu travailles dans la console. Ta progression est enregistrée dans ce navigateur.</p>
+  </div>
+  <div class="lb-progress glass" id="lbProgress"></div>
+  <div class="lb-grid">
+    <aside class="lb-missions" id="missions" aria-label="Missions"></aside>
+    <div class="lb-console">
+      <div class="pz" id="pano" aria-label="Simulateur Panorama"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ TRACE ============ -->
+<section id="trace" style="padding-top:20px"><div class="wrap wide">
+  <div class="sec-head" data-reveal>
+    <span class="kicker">4 · Packet tracer</span>
+    <h2>Envoie un paquet à travers <span class="grad">les deux barrières</span></h2>
+    <p class="lead">Le traceur applique la configuration <b>poussée</b> sur chaque pare-feu (pas la candidate) : NAT, zones, première règle qui correspond, règles par défaut.</p>
+  </div>
+  <div class="lb-trace">
+    <div class="panel lb-pad">
+      <div class="tr-flows" id="trFlows"></div>
+      <form class="tr-custom" id="trForm" autocomplete="off">
+        <div class="field"><label for="trSrc">Source</label><input type="text" id="trSrc" value="10.10.10.25"></div>
+        <div class="field"><label for="trDst">Destination</label><input type="text" id="trDst" value="93.184.216.34"></div>
+        <div class="field"><label for="trApp">Application</label><select id="trApp"></select></div>
+        <button class="btn primary sm" type="submit">Envoyer ▶</button>
+      </form>
+      <label class="tr-bypass"><input type="checkbox" id="trBypass"> <span>💥 Simuler la <b>compromission</b> de FW-PERIM (il laisse tout passer)</span></label>
+      <div id="trSync"></div>
+    </div>
+    <div class="panel tr-stage">
+      <div id="trTopo"></div>
+      <ol class="tr-log" id="trLog" aria-live="polite"><li class="mut">Choisis un flux puis envoie-le.</li></ol>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ CLI ============ -->
+<section id="cli" style="padding-top:20px"><div class="wrap wide">
+  <div class="sec-head" data-reveal>
+    <span class="kicker">5 · CLI</span>
+    <h2>Le même lab, <span class="grad">en ligne de commande</span></h2>
+    <p class="lead">Tape <code>help</code>. Sur Panorama, <code>configure</code> accepte les commandes <code>set</code> données dans les solutions ; tu peux les coller telles quelles. ↑/↓ pour l'historique, Tab pour compléter.</p>
+  </div>
+  <div class="lb-cli">
+    <div class="term" id="term">
+      <div class="term-bar"><i></i><i></i><i></i><select id="termTarget" aria-label="Équipement"><option value="pano">admin@Panorama</option><option value="DG-Perimetre">admin@FW-PERIM</option><option value="DG-Interne">admin@FW-INT</option></select></div>
+      <div class="term-out" id="termOut" aria-live="polite"></div>
+      <form class="term-in" id="termForm" autocomplete="off"><span id="termPrompt"></span><input id="termIn" spellcheck="false" aria-label="Commande"></form>
+    </div>
+    <div class="cli-ch" id="cliCh"></div>
+  </div>
+</div></section>
+
+<!-- ============ QUIZ ============ -->
+<section id="quiz" style="padding-top:20px"><div class="wrap">
+  <div class="sec-head" data-reveal>
+    <span class="kicker">6 · Quiz</span>
+    <h2>As-tu tout <span class="grad">retenu</span> ?</h2>
+  </div>
+  <div id="quizBox"></div>
+</div></section>
+</main>
+<div id="site-foot"></div><script src="../assets/js/common.js"></script><script src="js/lab-data.js"></script><script src="js/lab.js"></script></body></html>
